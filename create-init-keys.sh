@@ -1,102 +1,138 @@
-#!/bin/bash
+#!/bin/bash -e
 
-if [ "${1}_" != "native_" ] ; then
+DEFAULT_KEY_GEN_TYPE=ed25519
+DEFAULT_OUT_PATH=./beekeeper-keys
+
+print_help() {
+  echo """
+usage: ${0} [-t <key type>] [-o <outdir>] [-p] [-n]
+
+Creates a node registration certificate (signed by a certificate authority).
+
+  -t : (optional) key type (default: ${DEFAULT_KEY_GEN_TYPE})
+  -o : (optional) directory created to store output registration certificate (default: ${DEFAULT_OUT_PATH})
+  -p : (optional) flag to indicate script should generate a certificate authority with _no_ password (default: require password)
+  -n : (optional) flag to indicate script should _not_ be run within Docker (default: not set; run within Docker)
+  -? : print this help menu
+"""
+}
+
+KEY_GEN_TYPE=${DEFAULT_KEY_GEN_TYPE}
+OUT_PATH=${DEFAULT_OUT_PATH}
+CA_PASSWD=1
+NATIVE=
+while getopts "t:o:pn?" opt; do
+    case $opt in
+        t) KEY_GEN_TYPE=${OPTARG}
+            ;;
+        o) OUT_PATH=${OPTARG}
+            ;;
+        p) CA_PASSWD=
+            ;;
+        n) NATIVE=1
+            ;;
+        ?|*)
+            print_help
+            exit 1
+            ;;
+    esac
+done
+
+if [ -z "${NATIVE}" ]; then
     echo "Launching docker container..."
-    docker run -i \
+    docker run -it \
         -v `pwd`:/workdir/:rw \
         --workdir=/workdir \
         --env KEY_GEN_TYPE=${KEY_GEN_TYPE} \
-        waggle/waggle-pki-tools ./create-init-keys.sh native ${@}
+        waggle/waggle-pki-tools ${0} -n ${@}
     exit 0
 fi
 
-set -e
-export DATADIR=/workdir/beekeeper-keys
-mkdir -p ${DATADIR}
-
-### INIT ###
-
-if [ -z "${KEY_GEN_TYPE}" ] ; then
-    KEY_GEN_TYPE="ed25519"
+# validate the key gen type is not empty
+if [ -z "${KEY_GEN_TYPE}" ]; then
+    echo "Error: key type must not be empty. Exiting"
+    exit 1
 fi
-
 echo "KEY_GEN_TYPE: ${KEY_GEN_TYPE}"
 
-if [ "${3}_" != "--nopassword_" ] ; then
-    echo "Enter password for new CA:"
-    read -s ca_password
-else
+# get the CA password
+if [ -z "${CA_PASSWD}" ]; then
     # needed for automated testing
     export ca_password=""
+else
+    echo "Enter password for new certificate authority (CA):"
+    read -s ca_password
 fi
 
-set -e
+mkdir -p ${OUT_PATH}
 
 ### admin key-pair ###
-if [ ! -e ${DATADIR}/admin-key/admin.pem  ] ; then
-    set -x
-    mkdir -p ${DATADIR}/admin-key
-    ssh-keygen -f ${DATADIR}/admin-key/admin.pem -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
-    set +x
+BK_SSH_DIR="${OUT_PATH}/bk-admin-ssh-key"
+BK_SSH_KEY="${BK_SSH_DIR}/admin.pem"
+KEY_DESC="beekeeper admin key-pair"
+if [ ! -e ${BK_SSH_KEY} ] ; then
+    echo "Creating: ${KEY_DESC}... "
+    mkdir -p ${BK_SSH_DIR}
+    ssh-keygen -f ${BK_SSH_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
+else
+    echo "Skipped: ${KEY_DESC} already exists"
 fi
 
 ### nodes key-pair ###
 # the public key of this key-pair is baked into the images, so beekeeper can ssh into the nodes.
-if [ ! -e ${DATADIR}/node-key/nodes.pem  ] ; then
-    set -x
-    mkdir -p ${DATADIR}/node-key
-    ssh-keygen -f ${DATADIR}/node-key/nodes.pem -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
-    set +x
+NODE_SSH_DIR="${OUT_PATH}/node-ssh-key"
+NODE_SSH_KEY="${NODE_SSH_DIR}/nodes.pem"
+KEY_DESC="node ssh key-pair"
+if [ ! -e ${NODE_SSH_KEY}  ] ; then
+    echo "Creating: ${KEY_DESC}... "
+    mkdir -p ${NODE_SSH_DIR}
+    ssh-keygen -f ${NODE_SSH_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
+else
+    echo "Skipped: ${KEY_DESC} already exists"
 fi
 
-CERT_CA_TARGET_DIR="${DATADIR}/certca"
 ### CA ###
-if [ ! -e ${CERT_CA_TARGET_DIR}/beekeeper_ca_key ] ; then
-
-
-    mkdir -p ${CERT_CA_TARGET_DIR}
-
-    echo ssh-keygen -f ${CERT_CA_TARGET_DIR}/beekeeper_ca_key -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N "*****"
-    ssh-keygen -f ${CERT_CA_TARGET_DIR}/beekeeper_ca_key -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N "${ca_password}"
-
-
+CERT_CA_DIR="${OUT_PATH}/bk-ca"
+CERT_CA_KEY="${CERT_CA_DIR}/beekeeper_ca_key"
+KEY_DESC="beekeeper certificate authority key-pair"
+if [ ! -e ${CERT_CA_KEY} ] ; then
+    echo "Creating: ${KEY_DESC}... "
+    mkdir -p ${CERT_CA_DIR}
+    ssh-keygen -f ${CERT_CA_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N "${ca_password}"
 else
-    echo "CA already exists"
+    echo "Skipped: ${KEY_DESC} already exists"
 fi
 
 # beekeeper server key-pair and cert
-
-if [ ! -e ${DATADIR}/bk-server/beekeeper_server_key-cert.pub ] ; then
-    echo "creating beekeeper server key-pair and certificate... "
-
-
-    CERT_SERVER_TARGET_DIR="${DATADIR}/bk-server"
-
-    set -x
-    mkdir -p ${CERT_SERVER_TARGET_DIR}
-
+CERT_SERVER_DIR="${OUT_PATH}/bk-server-key"
+CERT_SERVER_KEY="${CERT_SERVER_DIR}/beekeeper_server_key"
+KEY_DESC="beekeeper server key-pair and certificate"
+if [ ! -e ${CERT_SERVER_KEY}-cert.pub ] ; then
+    echo "Creating: ${KEY_DESC}... "
+    mkdir -p ${CERT_SERVER_DIR}
 
     # create key pair
-    if [ ! -e ${CERT_SERVER_TARGET_DIR}/beekeeper_server_key ] ; then
-        ssh-keygen -f ${CERT_SERVER_TARGET_DIR}/beekeeper_server_key -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
+    if [ ! -e ${CERT_SERVER_KEY} ] ; then
+        ssh-keygen -f ${CERT_SERVER_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
     fi
-    set +x
-    # sign key (creates beekeeper_server_key-cert.pub) This creates the sshd "HostCertificate" file
-    echo sshpass -v -P passphrase -p "******"  ssh-keygen -I beekeeper_server -s ${CERT_CA_TARGET_DIR}/beekeeper_ca_key -h ${CERT_SERVER_TARGET_DIR}/beekeeper_server_key.pub
-    sshpass -v -P passphrase -p "${ca_password}"  ssh-keygen -I beekeeper_server -s ${CERT_CA_TARGET_DIR}/beekeeper_ca_key -h ${CERT_SERVER_TARGET_DIR}/beekeeper_server_key.pub
 
+    # sign key (creates beekeeper_server_key-cert.pub) This creates the sshd "HostCertificate" file
+    echo sshpass -v -P passphrase -p "******"  ssh-keygen -I beekeeper_server -s ${CERT_CA_KEY} -h ${CERT_SERVER_KEY}.pub
+    sshpass -v -P passphrase -p "${ca_password}"  ssh-keygen -I beekeeper_server -s ${CERT_CA_KEY} -h ${CERT_SERVER_KEY}.pub
 else
-    echo "beekeeper server key-pair and cert already exist"
+    echo "Skipped: ${KEY_DESC} already exists"
 fi
 
 # registration key-pair (NOT reg certificate ! )
-
-if [ ! -e ${DATADIR}/registration-keys/registration ] ; then
-
-    mkdir -p ${DATADIR}/registration-keys/
-
-    ssh-keygen -f ${DATADIR}/registration-keys/registration -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
+NODE_REG_DIR="${OUT_PATH}/node-registration-key"
+NODE_REG_KEY="${NODE_REG_DIR}/registration"
+KEY_DESC="node registration key-pair"
+if [ ! -e ${NODE_REG_KEY} ] ; then
+    echo "Creating: ${KEY_DESC}... "
+    mkdir -p ${NODE_REG_DIR}
+    ssh-keygen -f ${NODE_REG_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
 else
-    echo "reg key already exists"
-
+    echo "Skipped: ${KEY_DESC} already exists"
 fi
+
+echo "All keys created successfully! [${OUT_PATH}]"
