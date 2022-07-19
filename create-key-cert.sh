@@ -6,7 +6,7 @@ DEFAULT_OUT_PATH=./cert
 
 print_help() {
   echo """
-usage: create-key-cert.sh -b <beehive name> [-e <expire date>] [-c <CA path>] [-k <registration public key path>] [-o <outdir>] [-n]
+usage: ${0} -b <beehive name> [-e <expire date>] [-c <CA path>] [-k <registration public key path>] [-o <outdir>] [-n]
 
 Creates a node registration certificate (signed by a certificate authority).
 
@@ -52,7 +52,7 @@ if [ -z "${NATIVE}" ]; then
     docker run -it \
         -v `pwd`:/workdir/:rw \
         --workdir=/workdir \
-        waggle/waggle-pki-tools ./create-key-cert.sh -n ${@}
+        waggle/waggle-pki-tools ${0} -n ${@}
     exit 0
 fi
 
