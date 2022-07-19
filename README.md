@@ -6,51 +6,54 @@ This repository contains the tools used to create the keys and certificates used
 
 ## Initializing the Beekeeper Keys
 
-The `create-init-keys.sh` script creates the initial Beekeeper certificate authority key-pair, the beekeeper server key-pair and certificate, and the node registration key-pair.
+The `create-init-keys.sh` script creates all the keys and certificates needed for Beekeeper / node registration process, including keys to enable admin access to both the Beekeeper and nodes.
 
 Usage:
 ```bash
 ./create-init-keys.sh
 ```
 
+For details on script arguments:
+
+```bash
+./create-init-cert.sh -?
+```
+
 The following keys/certs are created:
 
-### **bk-admin-ssh-key**
+### **Beekeeper admin ssh key-pair [bk-admin-ssh-key]**
 
-This is the key-pair that is used by Beekeeper administrators to SSH to the Beekeeper service instance. This key is used during the reverse ssh (rssh) access chain to a node.
+This is the key-pair that is used by Beekeeper administrators to SSH to the Beekeeper service instance. This key is used during the reverse ssh (`rssh`) access chain to a node.
 
-- private key: needed by system administators needing privileged Beekeeper access
+- private key: needed by system administators requiring privileged Beekeeper access
 - public key: saved into the [Beekeeper](https://github.com/waggle-sensor/beekeeper) `sshd` instance `authorized_keys` file
 
-### **node-ssh-key**
+### **Node ssh key-pair [node-ssh-key]**
 
-This is the key-pair used by system administrators to SSH to the nodes. This key is used during the reverse ssh (rssh) access chain to a node.
+This is the key-pair used by system administrators to `ssh` to the nodes. This key is used during the reverse ssh (`rssh`) access chain to a node.
 
-- private key: needed by system administrators needing privileged node access
-- public key: saved into the Node's `root`  user `authorized_keys` file
+- private key: needed by system administrators requiring privileged node access
+- public key: saved into the node's `root`  user `authorized_keys` file
 
-### **bk-server-key**
+### **Beekeeper server key-pair and certificate [bk-server-key]**
 
-This the the Beekeeper key-pair and certificate that is saved to the Beeekeeper service instance. This CA signed certificate is used during the Node's SSH connection to verify that the Beekeeper is the trusted server.
+This is the Beekeeper key-pair and certificate that is saved to the Beeekeeper service instance. This CA signed certificate is used during the node's `ssh` connection to verify that the Beekeeper is the trusted server.
 
-- private key, public key, certificate: saved into the [Beekeeper](https://github.com/waggle-sensor/beekeeper)
+- private key & certificate: saved into the [Beekeeper](https://github.com/waggle-sensor/beekeeper) `sshd` instance as the servers `HostKey` and `HostCertificate`
 
-^ TODO figure out where?
+### **Beekeeper certificate authority key-pair [bk-ca]**
 
-### **bk-ca**
+This is the main Beekeeper certificate authority files used in the creation of certificates (i.e. node registration certificate).
 
-TODO: details
+- private key: kept secret and used for future certificate creation (i.e. [not registration certificates](#creating-a-node-registration-certificate))
+- public key: save into the [Beekeeper](https://github.com/waggle-sensor/beekeeper) `sshd` instance as the servers `TrustedUserCAKeys` and into the node's `/etc/ssh/ssh_known_hosts` file
 
-Beekeeper certificate authority files used in the creation of certificates (i.e. node registration certificate)
+### **Node registration keys [node-registration-key]**
 
-- private key: kept private
-- public key: save into the Node's `/etc/ssh/ssh_known_hosts` file
+This is the key-pair used by the node's upon registration to the Beekeeper.
 
-### node-registration-key**
-
-TODO: details
-
-Node registration keys to be copied to the nodes. 
+- private key: kept secret and copied to the node for Beekeeper registration (i.e. used by the [waggle-bk-registration service](https://github.com/waggle-sensor/waggle-bk-registration))
+- public key: un-used
 
 > *Note*: successful registration requires a [node certificate](#creating-a-node-registration-certificate).
 
