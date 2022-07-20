@@ -12,7 +12,7 @@ Creates a node registration certificate (signed by a certificate authority).
 
   -b : the beehive the node is to be assigned upon registration (required)
   -e : (optional) certificate expire date (ex. '+1d'; see ssh-keygen(1): 'validity_interval'), certificate will be valid forever if not provided (default: valid forever)
-  -c : (optional) path to the unlocked certificate authority key used in creation of the registration certificate (default: ${DEFAULT_CA_PATH})
+  -c : (optional) path to the certificate authority key used in creation of the registration certificate (default: ${DEFAULT_CA_PATH})
   -k : (optional) path to the registration public key for which the certificate is to be created (default: ${DEFAULT_KEY_PATH})
   -o : (optional) directory created to store output registration certificate (default: ${DEFAULT_OUT_PATH})
   -n : (optional) flag to indicate script should _not_ be run within Docker (default: not set; run within Docker)
