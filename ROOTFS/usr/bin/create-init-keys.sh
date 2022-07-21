@@ -59,7 +59,7 @@ KEY_DESC="beekeeper admin key-pair"
 if [ ! -e ${BK_SSH_KEY} ] ; then
     echo "Creating: ${KEY_DESC}... "
     mkdir -p ${BK_SSH_DIR}
-    ssh-keygen -f ${BK_SSH_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
+    ssh-keygen -f ${BK_SSH_KEY} -t ${KEY_GEN_TYPE} -N ''
 else
     echo "Skipped: ${KEY_DESC} already exists"
 fi
@@ -72,7 +72,7 @@ KEY_DESC="node ssh key-pair"
 if [ ! -e ${NODE_SSH_KEY}  ] ; then
     echo "Creating: ${KEY_DESC}... "
     mkdir -p ${NODE_SSH_DIR}
-    ssh-keygen -f ${NODE_SSH_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
+    ssh-keygen -f ${NODE_SSH_KEY} -t ${KEY_GEN_TYPE} -N ''
 else
     echo "Skipped: ${KEY_DESC} already exists"
 fi
@@ -84,7 +84,7 @@ KEY_DESC="beekeeper certificate authority key-pair"
 if [ ! -e ${CERT_CA_KEY} ] ; then
     echo "Creating: ${KEY_DESC}... "
     mkdir -p ${CERT_CA_DIR}
-    ssh-keygen -f ${CERT_CA_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N "${ca_password}"
+    ssh-keygen -f ${CERT_CA_KEY} -t ${KEY_GEN_TYPE} -N "${ca_password}"
 else
     echo "Skipped: ${KEY_DESC} already exists"
 fi
@@ -99,7 +99,7 @@ if [ ! -e ${CERT_SERVER_KEY}-cert.pub ] ; then
 
     # create key pair
     if [ ! -e ${CERT_SERVER_KEY} ] ; then
-        ssh-keygen -f ${CERT_SERVER_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
+        ssh-keygen -f ${CERT_SERVER_KEY} -t ${KEY_GEN_TYPE} -N ''
     fi
 
     # sign key (creates beekeeper_server_key-cert.pub) This creates the sshd "HostCertificate" file
@@ -116,7 +116,7 @@ KEY_DESC="node registration key-pair"
 if [ ! -e ${NODE_REG_KEY} ] ; then
     echo "Creating: ${KEY_DESC}... "
     mkdir -p ${NODE_REG_DIR}
-    ssh-keygen -f ${NODE_REG_KEY} -t ${KEY_GEN_TYPE} ${KEY_GEN_ARGS} -N ''
+    ssh-keygen -f ${NODE_REG_KEY} -t ${KEY_GEN_TYPE} -N ''
 else
     echo "Skipped: ${KEY_DESC} already exists"
 fi
