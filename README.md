@@ -11,7 +11,7 @@ The `create-init-keys.sh` script creates all the keys and certificates needed fo
 Usage:
 ```bash
 docker run --rm -it \
-  -v $PWD:/workdir:rw \
+  -v ${PWD}:/workdir:rw \
   waggle/beekeeper-key-tools:latest \
   create-init-keys.sh
 ```
@@ -20,7 +20,7 @@ For details on script arguments:
 
 ```bash
 docker run --rm -it \
-  -v $PWD:/workdir:rw \
+  -v ${PWD}:/workdir:rw \
   waggle/beekeeper-key-tools:latest \
   create-init-keys.sh -?
 ```
@@ -71,7 +71,7 @@ At a minimum the certification script requires the name of the "Beehive" the nod
 
 ```bash
 docker run --rm -it \
-  -v $PWD:/workdir:rw \
+  -v ${PWD}:/workdir:rw \
   waggle/beekeeper-key-tools:latest \
   create-key-cert.sh -b <beehive name>
 ```
@@ -80,7 +80,7 @@ Additional parameters can be specified such as the certificates "validity" time 
 
 ```bash
 docker run --rm -it \
-  -v $PWD:/workdir:rw \
+  -v ${PWD}:/workdir:rw \
   waggle/beekeeper-key-tools:latest \
   create-key-cert.sh -b <beehive_name> -e +1D
 ```
@@ -89,7 +89,7 @@ For details on other script arguments:
 
 ```bash
 docker run --rm -it \
-  -v $PWD:/workdir:rw \
+  -v ${PWD}:/workdir:rw \
   waggle/beekeeper-key-tools:latest \
   create-key-cert.sh -?
 ```
@@ -107,7 +107,7 @@ This will produce a folder (via the `-o` option) that contains 3 files
 
 ```bash
 docker run --rm -it \
-  -v $PWD:/workdir:rw \
+  -v ${PWD}:/workdir:rw \
   waggle/beekeeper-key-tools:latest \
   create-init-keys.sh -o mydir -p
 ```
@@ -123,7 +123,7 @@ The following command will generate a new registration key-pair and certificate 
 
 ```bash
 docker run --rm -it \
-  -v $PWD:/workdir:rw \
+  -v ${PWD}:/workdir:rw \
   waggle/beekeeper-key-tools:latest \
   create-key-cert.sh -b beehive-joe -e +1W -c beekeeper-keys/bk-ca/beekeeper_ca_key -o mydir-newreg
 ```
@@ -155,7 +155,7 @@ The following command will generate a certificate (in the folder `./mydir-reg`) 
 
 ```bash
 docker run --rm -it \
-  -v $PWD:/workdir:rw \
+  -v ${PWD}:/workdir:rw \
   waggle/beekeeper-key-tools:latest \
   create-key-cert.sh -b beehive-joe -e +1D -c mydir/bk-ca/beekeeper_ca_key -k mydir/node-registration-key/registration.pub -o mydir-reg
 ```

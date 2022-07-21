@@ -14,7 +14,7 @@ docker build . -t ${DOCKERTAG}
 
 echo "01: Test create init keys (no password)..."
 if docker run --rm \
-        -v $PWD:/workdir:rw \
+        -v ${PWD}:/workdir:rw \
         ${DOCKERTAG} \
         create-init-keys.sh \
         -o testkeys \
@@ -26,7 +26,7 @@ fi
 
 echo "02: Test create registration cert..."
 if docker run --rm \
-        -v $PWD:/workdir:rw \
+        -v ${PWD}:/workdir:rw \
         ${DOCKERTAG} \
         create-key-cert.sh \
         -b beehive-test \
@@ -50,7 +50,7 @@ fi
 
 echo "04: Test create new registration cert..."
 if docker run --rm \
-        -v $PWD:/workdir:rw \
+        -v ${PWD}:/workdir:rw \
         ${DOCKERTAG} \
         create-key-cert.sh \
         -b beehive-test \
