@@ -2,7 +2,7 @@
 
 This repository contains the tools used to create the keys and certificates used to establish secure communication channels between the nodes and the Beekeeper services.
 
-> Note: some of the tools make use of the [Waggle PKI Tools](https://github.com/waggle-sensor/waggle-pki-tools) Docker container to establish a reliable run-time environment.
+The tools are executed through the [waggle/beekeeper-key-tools](https://hub.docker.com/r/waggle/beekeeper-key-tools) docker container.
 
 ## Initializing the Beekeeper Keys
 
@@ -10,13 +10,19 @@ The `create-init-keys.sh` script creates all the keys and certificates needed fo
 
 Usage:
 ```bash
-./create-init-keys.sh
+docker run --rm -it \
+  -v $PWD:/workdir:rw \
+  waggle/beekeeper-key-tools:latest \
+  create-init-keys.sh
 ```
 
 For details on script arguments:
 
 ```bash
-./create-init-cert.sh -?
+docker run --rm -it \
+  -v $PWD:/workdir:rw \
+  waggle/beekeeper-key-tools:latest \
+  create-init-keys.sh -?
 ```
 
 The following keys/certs are created:
@@ -64,19 +70,28 @@ The `create-key-cert.sh` script is used to create node registration certificates
 At a minimum the certification script requires the name of the "Beehive" the node is to be assigned to after registration.
 
 ```bash
-./create-key-cert.sh -b <beehive name>
+docker run --rm -it \
+  -v $PWD:/workdir:rw \
+  waggle/beekeeper-key-tools:latest \
+  create-key-cert.sh -b <beehive name>
 ```
 
 Additional parameters can be specified such as the certificates "validity" time (see: ['validity_interval'](https://www.man7.org/linux/man-pages/man1/ssh-keygen.1.html)). This example has the certificate valid for 1 day from the time it is created.
 
 ```bash
-./create-key-cert.sh -b <beehive_name> -e +1D
+docker run --rm -it \
+  -v $PWD:/workdir:rw \
+  waggle/beekeeper-key-tools:latest \
+  create-key-cert.sh -b <beehive_name> -e +1D
 ```
 
 For details on other script arguments:
 
 ```bash
-./create-key-cert.sh -?
+docker run --rm -it \
+  -v $PWD:/workdir:rw \
+  waggle/beekeeper-key-tools:latest \
+  create-key-cert.sh -?
 ```
 
 This will produce a folder (via the `-o` option) that contains 3 files
@@ -84,24 +99,52 @@ This will produce a folder (via the `-o` option) that contains 3 files
 - public registration key (copied from the path specified by `-k`)
 - registration certificate
 
-For example, the following command will generate a certficate (in the folder `./cert/nodex`) for the registration keys (`./beekeeper-keys/registration_keys/registration.pub`) that expires in 1 day  for the `beehive-dev` Beehive using the Beekeeper certificate authority (found in `./beekeeper-keys/certca/beekeeper_ca_key`)
+## Examples
+
+### Creating a CA with no password in a specific directory
+
 ```bash
-$ ./create-key-cert.sh -b beehive-dev -e +1D -o cert/nodex -c beekeeper-keys/certca/beekeeper_ca_key -k beekeeper-keys/registration_keys/registration.pub
+docker run --rm -it \
+  -v $PWD:/workdir:rw \
+  waggle/beekeeper-key-tools:latest \
+  create-init-keys.sh -o mydir -p
+```
 
-$ ls ./cert/nodex
+```bash
+[NAISE-MAC07.localdomain] ~/workspace/waggle-sensor/beekeeper-key-tools$ ls mydir/
+bk-admin-ssh-key	bk-ca			bk-server-key		node-registration-key	node-ssh-key
+```
+
+### Creating a registration certificate that expires in 1 day
+
+The following command will generate a certificate (in the folder `./cert/nodex`) for the registration keys (`./mydir/node-registration-key/registration.pub`) that expires in 1 day  for the `beehive-joe` Beehive using the Beekeeper certificate authority (found in `./mydir/bk-ca/beekeeper_ca_key`)
+
+```bash
+docker run --rm -it \
+  -v $PWD:/workdir:rw \
+  waggle/beekeeper-key-tools:test \
+  create-key-cert.sh -b beehive-joe -e +1D -c mydir/bk-ca/beekeeper_ca_key -k mydir/node-registration-key/registration.pub -o mydir-reg
+```
+
+> _Note_: the above command uses the node registration key from the `./create-init-keys.sh` script
+
+```bash
+[NAISE-MAC07.localdomain] ~/workspace/waggle-sensor/beekeeper-key-tools$ ls mydir-reg/
 registration		registration-cert.pub	registration.pub
+```
 
-$ ssh-keygen -L -f cert/nodex/registration-cert.pub
-cert/nodex/registration-cert.pub:
+```bash
+[NAISE-MAC07.localdomain] ~/workspace/waggle-sensor/beekeeper-key-tools$ ssh-keygen -L -f mydir-reg/registration-cert.pub
+mydir-reg/registration-cert.pub:
         Type: ssh-ed25519-cert-v01@openssh.com user certificate
-        Public key: ED25519-CERT SHA256:VjVrn2Kof8rAcYy2EOXIh/kDMF10isPGxVtFBh+WnJM
-        Signing CA: ED25519 SHA256:KUq2jxddaBuAU76eOUxUsNolH6wCie2/psu7JHZDkHo (using ssh-ed25519)
+        Public key: ED25519-CERT SHA256:/qrVNtRxYHYIjbvPgVK908R07XwOczjqtenB9wR3vDk
+        Signing CA: ED25519 SHA256:25fS21u2zlr7JDI95CzmNsXdONZaBDVjFEhD6kWQ+qQ (using ssh-ed25519)
         Key ID: "sage_registration"
         Serial: 0
-        Valid: from 2022-07-14T17:51:00 to 2022-07-15T17:52:16
+        Valid: from 2022-07-20T19:14:00 to 2022-07-21T19:15:41
         Principals:
                 sage_registration
         Critical Options:
-                force-command /opt/sage/beekeeper/register/register.sh -b beehive-dev
+                force-command /opt/sage/beekeeper/register/register.sh -b beehive-joe
         Extensions: (none)
 ```
