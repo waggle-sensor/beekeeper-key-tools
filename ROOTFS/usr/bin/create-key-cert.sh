@@ -6,7 +6,7 @@ DEFAULT_OUT_PATH=./cert
 
 print_help() {
   echo """
-usage: ${0} -b <beehive name> [-e <expire date>] [-c <CA path>] [-k <registration public key path>] [-o <outdir>] [-n]
+usage: ${0} -b <beehive name> [-e <expire date>] [-c <CA path>] [-k <registration public key path>] [-o <outdir>]
 
 Creates a node registration certificate (signed by a certificate authority).
 
@@ -15,7 +15,6 @@ Creates a node registration certificate (signed by a certificate authority).
   -c : (optional) path to the certificate authority key used in creation of the registration certificate (default: ${DEFAULT_CA_PATH})
   -k : (optional) path to the registration public key for which the certificate is to be created (default: ${DEFAULT_KEY_PATH})
   -o : (optional) directory created to store output registration certificate (default: ${DEFAULT_OUT_PATH})
-  -n : (optional) flag to indicate script should _not_ be run within Docker (default: not set; run within Docker)
   -? : print this help menu
 """
 }
@@ -25,7 +24,6 @@ VALID="always:forever"
 CA_PATH=${DEFAULT_CA_PATH}
 KEY_PATH=${DEFAULT_KEY_PATH}
 OUT_PATH=${DEFAULT_OUT_PATH}
-NATIVE=
 while getopts "b:e:c:k:o:n?" opt; do
     case $opt in
         b) BEEHIVE=${OPTARG}
@@ -38,23 +36,12 @@ while getopts "b:e:c:k:o:n?" opt; do
             ;;
         o) OUT_PATH=${OPTARG}
             ;;
-        n) NATIVE=1
-            ;;
         ?|*)
             print_help
             exit 1
             ;;
     esac
 done
-
-if [ -z "${NATIVE}" ]; then
-    echo "Launching docker container..."
-    docker run -it \
-        -v `pwd`:/workdir/:rw \
-        --workdir=/workdir \
-        waggle/waggle-pki-tools ${0} -n ${@}
-    exit 0
-fi
 
 # validate the CA key is found
 if [ ! -f "${CA_PATH}" ]; then

@@ -5,14 +5,13 @@ DEFAULT_OUT_PATH=./beekeeper-keys
 
 print_help() {
   echo """
-usage: ${0} [-t <key type>] [-o <outdir>] [-p] [-n]
+usage: ${0} [-t <key type>] [-o <outdir>] [-p]
 
 Creates a node registration certificate (signed by a certificate authority).
 
   -t : (optional) key type (default: ${DEFAULT_KEY_GEN_TYPE})
   -o : (optional) directory created to store output registration certificate (default: ${DEFAULT_OUT_PATH})
   -p : (optional) flag to indicate script should generate a certificate authority with _no_ password (default: require password)
-  -n : (optional) flag to indicate script should _not_ be run within Docker (default: not set; run within Docker)
   -? : print this help menu
 """
 }
@@ -20,7 +19,6 @@ Creates a node registration certificate (signed by a certificate authority).
 KEY_GEN_TYPE=${DEFAULT_KEY_GEN_TYPE}
 OUT_PATH=${DEFAULT_OUT_PATH}
 CA_PASSWD=1
-NATIVE=
 while getopts "t:o:pn?" opt; do
     case $opt in
         t) KEY_GEN_TYPE=${OPTARG}
@@ -29,24 +27,12 @@ while getopts "t:o:pn?" opt; do
             ;;
         p) CA_PASSWD=
             ;;
-        n) NATIVE=1
-            ;;
         ?|*)
             print_help
             exit 1
             ;;
     esac
 done
-
-if [ -z "${NATIVE}" ]; then
-    echo "Launching docker container..."
-    docker run -it \
-        -v `pwd`:/workdir/:rw \
-        --workdir=/workdir \
-        --env KEY_GEN_TYPE=${KEY_GEN_TYPE} \
-        waggle/waggle-pki-tools ${0} -n ${@}
-    exit 0
-fi
 
 # validate the key gen type is not empty
 if [ -z "${KEY_GEN_TYPE}" ]; then
