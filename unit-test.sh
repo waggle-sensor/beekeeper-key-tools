@@ -33,7 +33,7 @@ if docker run --rm \
         -o testkeys-reg \
         -e +1D \
         -c testkeys/bk-ca/beekeeper_ca_key \
-        -k testkeys/node-registration-key/registration.pub ; then
+        -k testkeys/node-registration-key/registration ; then
     pass
 else
     fail 2
@@ -46,4 +46,18 @@ if ssh-keygen -L -f testkeys-reg/registration-cert.pub \
     pass
 else
     fail 3
+fi
+
+echo "04: Test create new registration cert..."
+if docker run --rm \
+        -v $PWD:/workdir:rw \
+        ${DOCKERTAG} \
+        create-key-cert.sh \
+        -b beehive-test \
+        -o testkeys-newreg \
+        -e +1D \
+        -c testkeys/bk-ca/beekeeper_ca_key ; then
+    pass
+else
+    fail 4
 fi
